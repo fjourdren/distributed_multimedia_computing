@@ -47,10 +47,10 @@ char *argv[];
 	struct pvmhostinfo *hostp;
 
 	// log
-	FILE *OutputFile;
+	/*FILE *OutputFile;
 	char fichierOutput[100];
 	sprintf(fichierOutput, "log%d.txt", pvm_mytid());
-	OutputFile = fopen(fichierOutput, "w");
+	OutputFile = fopen(fichierOutput, "w");*/
 
 	wait(2);
 
@@ -77,8 +77,7 @@ char *argv[];
 			indice2 = i;
 		}
 	}
-	printf("Tache %d (%d): je tourne sur la machine %s (%s : %d)\n",
-		param, mytid, hostp[indice2].hi_name, machine, ti_host);
+	//printf("Tache %d (%d): je tourne sur la machine %s (%s : %d)\n",param, mytid, hostp[indice2].hi_name, machine, ti_host);
 
 
     // mallocs pour les images
@@ -158,17 +157,17 @@ char *argv[];
             // envoi
             pvm_send(pvm_mytidHost, msgtype);
 
-            fprintf(OutputFile, "Ligne num %d | STOP: %d | premier pixel: %d\n", index, stop, resultat[0]);
+            //fprintf(OutputFile, "Ligne num %d | STOP: %d | premier pixel: %d\n", index, stop, resultat[0]);
         }
         
     }
 
-    fprintf(OutputFile, "Closing task %d\n", pvm_mytidHost);
+    //fprintf(OutputFile, "Closing task %d\n", pvm_mytidHost);
 
 	pvm_exit();
 
 
-	fclose(OutputFile);
+	//fclose(OutputFile);
 
 	exit(0);
 

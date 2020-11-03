@@ -311,9 +311,7 @@ char *argv[];
 
 
 
-
-
-	// boucle et envoi de chaque ligne
+	// boucle et envoi de chaque ligne sur UN SEUL ESCLAVE
 	/*for (i = 0 ; i < Y ; i++) { // récupère ligne par ligne
         envoiLigne(, Y, pvm_mytidHost, LE_MIN, ETALEMENT, X, i, image[i]);
 
@@ -332,7 +330,6 @@ char *argv[];
         pvm_upkint(&ligne_task[0], X, 1);
 
         printf("Pixel reçu : %d\n", ligne_task[0]);
-
 
 
         resultat[index_task] = ligne_task;
@@ -376,7 +373,7 @@ char *argv[];
 
         nb_line_received = nb_line_received + 1;
 
-		printf("taks: %d | index: %d, %d < %d \n", id_task, index_task, nb_line_received, Y);
+		//printf("Tâche: %d | Index de la ligne: %d\n", id_task, index_task);
 
 
 
@@ -390,7 +387,7 @@ char *argv[];
     }
 
 
-    printf("Stopping\n");
+    printf("Fin du programme\n");
     // stop
     int tache_stopping;
     for (tache_stopping=1; tache_stopping < pvm_nbtaches; tache_stopping++) {
@@ -449,47 +446,41 @@ char *argv[];
 
 
 void envoiLigne(int destinataire, int stop, int Y, int pvm_mytidHost, int LE_MIN, float ETALEMENT, int X, int index, int *ligne) {
-        /** ENVOI
-            - stop
-            - id_parent
-            - LE_MIN
-            - ETALEMENT
-            - X
-            - index de la ligne
-            - ligne
-        */
+	/** ENVOI
+		- stop
+		- id_parent
+		- LE_MIN
+		- ETALEMENT
+		- X
+		- index de la ligne
+		- ligne
+	*/
 
-        // DEBUT BOUCLE TRAITEMENT
-        int pvm_msgtype = MAITRE_ENVOI;
-        pvm_initsend(PvmDataDefault);
+	// DEBUT BOUCLE TRAITEMENT
+	int pvm_msgtype = MAITRE_ENVOI;
+	pvm_initsend(PvmDataDefault);
 
-        // si on est à la dernière ligne, envoi de stop
-        pvm_pkint(&stop, 1, 1); // https://manpages.debian.org/jessie/pvm-dev/pvm_pkint.3
+	// si on est à la dernière ligne, envoi de stop
+	pvm_pkint(&stop, 1, 1); // https://manpages.debian.org/jessie/pvm-dev/pvm_pkint.3
 
-        // envoi de l'ID parent
-        pvm_pkint(&pvm_mytidHost, 1, 1);
+	// envoi de l'ID parent
+	pvm_pkint(&pvm_mytidHost, 1, 1);
 
-        // envoi de le_min
-        pvm_pkint(&LE_MIN, 1, 1);
+	// envoi de le_min
+	pvm_pkint(&LE_MIN, 1, 1);
 
-        // envoi de l'etalement
-        pvm_pkfloat(&ETALEMENT, 1, 1);
+	// envoi de l'etalement
+	pvm_pkfloat(&ETALEMENT, 1, 1);
 
-        // envoi de X
-        pvm_pkint(&X, 1, 1);
+	// envoi de X
+	pvm_pkint(&X, 1, 1);
 
-        // envoi de l'index de la ligne
-        pvm_pkint(&index, 1, 1);
+	// envoi de l'index de la ligne
+	pvm_pkint(&index, 1, 1);
 
-        // envoi de la première ligne
-        pvm_pkint(ligne, X, 1);
+	// envoi de la première ligne
+	pvm_pkint(ligne, X, 1);
 
-        // envoi de toutes les infos
-        pvm_send(destinataire, pvm_msgtype);
-
-		if(stop == 1) {
-			printf("Envoie de stop\n");
-		} else {
-			printf("Envoie ligne %d effectue \n", index);
-		}
+	// envoi de toutes les infos
+	pvm_send(destinataire, pvm_msgtype);
 }
