@@ -145,19 +145,22 @@ char *argv[];
         /* Envoi de la nouvelle ligne au maître                                   */
         /*========================================================================*/
 
-        // init envoi
-        msgtype = ESCLAVE_ENVOI;
-        pvm_initsend(PvmDataDefault);
+        if(stop == 0) {
+            // init envoi
+            msgtype = ESCLAVE_ENVOI;
+            pvm_initsend(PvmDataDefault);
 
-        // construction des variables à envoyer
-        pvm_pkint(&mytid, 1, 1);
-        pvm_pkint(&index, 1, 1);
-        pvm_pkint(resultat, X, 1);
+            // construction des variables à envoyer
+            pvm_pkint(&mytid, 1, 1);
+            pvm_pkint(&index, 1, 1);
+            pvm_pkint(resultat, X, 1);
 
-        // envoi
-        pvm_send(pvm_mytidHost, msgtype);
+            // envoi
+            pvm_send(pvm_mytidHost, msgtype);
 
-        fprintf(OutputFile, "Ligne num %d | STOP: %d | premier pixel: %d\n", index, stop, resultat[0]);
+            fprintf(OutputFile, "Ligne num %d | STOP: %d | premier pixel: %d\n", index, stop, resultat[0]);
+        }
+        
     }
 
     fprintf(OutputFile, "Closing task %d\n", pvm_mytidHost);

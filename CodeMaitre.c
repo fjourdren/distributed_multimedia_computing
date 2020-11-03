@@ -272,7 +272,7 @@ char *argv[];
 	printf("Nombre d'architecture dans la Parallel Virtual Machine : %d\n",pvm_narch);
 
 	printf("\nListe des machines de la PVM :  \n");
-	for (i=0 ; i < pvm_nhost ; i++) {
+	for (i=1 ; i < pvm_nhost ; i++) { // on passe à 1 pour prendre que les hôtes distants
 		printf("\tNoeud %d : \n", i);
 		printf("\t\t hi_tid = %d \n",pvm_hostp[i].hi_tid);
 		printf("\t\t hi_name = %s \n",pvm_hostp[i].hi_name);
@@ -289,7 +289,6 @@ char *argv[];
 		il faut placer le flag PvmTaskHost
 		Sinon, le systeme choisit tout seul le meilleur host
 		pour lancer la tache */
-
       		pvm_nbtaches = pvm_spawn(pvm_Fichier, &pvm_param[0], PvmTaskHost, pvm_hostp[i].hi_name,1, &pvm_numtaches[i]);
 
 		printf("\tLance une tache sur %s : Tache %c %s %s (%d) \n", pvm_hostp[i].hi_name, pvm_numtaches[i], pvm_param[0], pvm_param[1], pvm_nbtaches);
@@ -344,10 +343,13 @@ char *argv[];
 	// envoi de stop à tous les esclaves
 	int last_line_sent = 0;
 	int n_ligne;
-    for (n_ligne=0; n_ligne < 1; n_ligne++) {
-        envoiLigne(pvm_numtaches[0], 0, Y, pvm_mytidHost, LE_MIN, ETALEMENT, X, last_line_sent, image[last_line_sent]); // envoi de la ligne
 
-        last_line_sent = last_line_sent + 1; // incrémentation de la dernière ligne envoyé
+    //for (n_ligne=0; n_ligne < 1; n_ligne++) {
+	for (n_ligne=0; n_ligne < pvm_nbtaches; n_ligne++) {
+		if(pvm_numtaches[n_ligne] >= 500000 && pvm_numtaches[n_ligne] <= 999999) {
+			envoiLigne(pvm_numtaches[n_ligne], 0, Y, pvm_mytidHost, LE_MIN, ETALEMENT, X, last_line_sent, image[last_line_sent]); // envoi de la ligne
+			last_line_sent = last_line_sent + 1; // incrémentation de la dernière ligne envoyé
+		}
     }
 
     // réception
@@ -372,18 +374,9 @@ char *argv[];
         // ajout de la ligne dans le tableau des résultats
         resultat[index_task] = ligne_task;
 
-		if(index_task == 0) {
-			int j;
-			printf("%d => ", index_task);
-			for (j = 0 ; j < X ; j++) {
-				printf("%d ", ligne_task[j]);
-			}
-			printf("\n");
-		}
-		
-
-
         nb_line_received = nb_line_received + 1;
+
+		printf("taks: %d | index: %d, %d < %d \n", id_task, index_task, nb_line_received, Y);
 
 
 
@@ -394,16 +387,17 @@ char *argv[];
             envoiLigne(id_task, 0, Y, pvm_mytidHost, LE_MIN, ETALEMENT, X, last_line_sent, image[last_line_sent]);
             last_line_sent = last_line_sent + 1;
         }
-
-        printf("+1 \n");
     }
 
 
     printf("Stopping\n");
     // stop
     int tache_stopping;
-    for (tache_stopping=0; tache_stopping < pvm_nbtaches; tache_stopping++) {
-        envoiLigne(pvm_numtaches[0], 1, 0, pvm_mytidHost, 0, 0, 0, 0, NULL);
+    for (tache_stopping=1; tache_stopping < pvm_nbtaches; tache_stopping++) {
+		if(pvm_numtaches[tache_stopping] > 0) {
+			envoiLigne(pvm_numtaches[tache_stopping], 1, 0, pvm_mytidHost, 0, 0, 0, 0, NULL);
+		}
+        
     }
 
 
@@ -435,6 +429,14 @@ char *argv[];
 	fprintf(Dst,"\n");
 	fclose(Dst);
 
+
+	// free memory
+	int i_delete;
+	for(i_delete = 0; i < Y; i++) {
+		free(resultat[i_delete]);
+	}
+
+
 	printf("\n");
 
 	/*========================================================================*/
@@ -462,9 +464,6 @@ void envoiLigne(int destinataire, int stop, int Y, int pvm_mytidHost, int LE_MIN
         pvm_initsend(PvmDataDefault);
 
         // si on est à la dernière ligne, envoi de stop
-        if(index == Y-1) {
-            stop = 1;
-        }
         pvm_pkint(&stop, 1, 1); // https://manpages.debian.org/jessie/pvm-dev/pvm_pkint.3
 
         // envoi de l'ID parent
@@ -492,9 +491,5 @@ void envoiLigne(int destinataire, int stop, int Y, int pvm_mytidHost, int LE_MIN
 			printf("Envoie de stop\n");
 		} else {
 			printf("Envoie ligne %d effectue \n", index);
-		}        
-}
-
-void receptionLigne() {
-
+		}
 }
