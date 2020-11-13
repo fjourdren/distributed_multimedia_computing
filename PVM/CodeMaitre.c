@@ -326,38 +326,10 @@ char *argv[];
 	// début chrono
 	beginClock;
 
-
-	// boucle et envoi de chaque ligne sur UN SEUL ESCLAVE
-	/*for (i = 0 ; i < Y ; i++) { // récupère ligne par ligne
-        envoiLigne(, Y, pvm_mytidHost, LE_MIN, ETALEMENT, X, i, image[i]);
-
-
-
-        // init réception
-        pvm_msgtype = MAITRE_RECOIT;
-        pvm_recv(-1, pvm_msgtype);
-
-        // récupère l'index
-        int index_task;
-        pvm_upkint(&index_task, 1, 1);
-
-        // récupère la ligne traité
-        int *ligne_task = malloc(X * sizeof(int));
-        pvm_upkint(&ligne_task[0], X, 1);
-
-        printf("Pixel reçu : %d\n", ligne_task[0]);
-
-
-        resultat[index_task] = ligne_task;
-	}*/
-
-
-
-	// envoi de stop à tous les esclaves
+	// début du calcul
 	int last_line_sent = 0;
 	int n_ligne;
 
-    //for (n_ligne=0; n_ligne < 1; n_ligne++) {
 	for (n_ligne=0; n_ligne < pvm_nbtaches; n_ligne++) {
 		if(pvm_numtaches[n_ligne] >= 500000 && pvm_numtaches[n_ligne] <= 999999) {
 			envoiLigne(pvm_numtaches[n_ligne], 0, Y, pvm_mytidHost, LE_MIN, ETALEMENT, X, last_line_sent, image[last_line_sent]); // envoi de la ligne
@@ -403,7 +375,7 @@ char *argv[];
     }
 
 
-    printf("Fin du programme\n");
+    printf("Envoi de stop\n");
     // stop
     int tache_stopping;
     for (tache_stopping=1; tache_stopping < pvm_nbtaches; tache_stopping++) {
@@ -414,7 +386,7 @@ char *argv[];
     }
 
 
-
+	printf("Fin du programme\n");
 
 
 	// FIN BOUCLE TRAITEMENT
