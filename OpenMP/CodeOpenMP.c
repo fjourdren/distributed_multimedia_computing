@@ -235,7 +235,7 @@ char *argv[];
 	// début chrono
 	beginClock;
 
-    omp_set_num_threads(32);
+    omp_set_num_threads(nthreads);
 	#pragma omp parallel for
 	for (i = 0 ; i < Y ; i++) {
 		for (j = 0 ; j < X ; j++) {
