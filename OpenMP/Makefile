@@ -5,15 +5,8 @@ all: CodeOpenMP
 
 
 
-CodeSequentiel:	CodeSequentiel.c
-	$(CC) -o CodeSequentiel CodeSequentiel.c $(CFLAGS)   
+CodeOpenMP:	CodeOpenMP.c
+	$(CC) -o CodeOpenMP CodeOpenMP.c $(CFLAGS)   
 
 clean:
-	$(RM) CodeSequentiel 
-
-
-
-
-
-
-
+	$(RM) CodeOpenMP 
