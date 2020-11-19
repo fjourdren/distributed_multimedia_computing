@@ -10,10 +10,3 @@ CodeSequentiel:	CodeSequentiel.c
 
 clean:
 	$(RM) CodeSequentiel 
-
-
-
-
-
-
-

@@ -16,10 +16,3 @@ clean:
 	$(RM) LanceTaches 
 	$(RM) Tache 
 	$(RM) $(HOME)/Tache
-
-
-
-
-
-
-
