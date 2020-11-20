@@ -7,16 +7,16 @@
 
 
 #include <stdlib.h>
+#include <sys/time.h>
 #include <stdio.h>
 #include <time.h> 
 
 
-// définition pour les temps de calcul (sans préemptions OS)
-#define initClock    clock_t start_t, end_t, total_t;
-#define beginClock start_t = clock()
-#define endClock end_t = clock()
-#define tpsClock (double)(end_t - start_t) / CLOCKS_PER_SEC
-initClock;
+#define initTimer struct timeval tv1, tv2; struct timezone tz
+#define startTimer gettimeofday(&tv1, &tz)
+#define stopTimer gettimeofday(&tv2, &tz)
+#define tpsCalcul ((tv2.tv_sec-tv1.tv_sec)*1000000L + (tv2.tv_usec-tv1.tv_usec))
+initTimer;
 
 
 #define MAX_CHAINE 100
@@ -203,7 +203,7 @@ char *argv[];
 	/*========================================================================*/
 	
 	// début chrono
-	beginClock;
+	startTimer;
 
     // TODO: à paralélliser
 	for (i = 0 ; i < Y ; i++) {
@@ -213,10 +213,10 @@ char *argv[];
 	}
 
 	// Fin chrono
-	endClock;
+	stopTimer;
 
 	// affichage du chrono
-	printf("chrono %f ", tpsClock);
+	printf("chrono %ld ", tpsCalcul);
 
 	/*========================================================================*/
 	/* Sauvegarde de l'image dans le fichier resultat			*/

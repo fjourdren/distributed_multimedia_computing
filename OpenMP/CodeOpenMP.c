@@ -7,18 +7,18 @@
 
 
 #include <stdlib.h>
+#include <sys/time.h>
 #include <stdio.h>
 #include <time.h>
 #include <omp.h>
 
 
-// définition pour les temps de calcul (sans préemptions OS)
-#define initClock    clock_t start_t, end_t, total_t;
-#define beginClock start_t = clock()
-#define endClock end_t = clock()
-#define tpsClock (double)(end_t - start_t) / CLOCKS_PER_SEC
-initClock;
-
+// définition pour les temps de calcul
+#define initTimer struct timeval tv1, tv2; struct timezone tz
+#define startTimer gettimeofday(&tv1, &tz)
+#define stopTimer gettimeofday(&tv2, &tz)
+#define tpsCalcul ((tv2.tv_sec-tv1.tv_sec)*1000000L + (tv2.tv_usec-tv1.tv_usec))
+initTimer;
 
 #define MAX_CHAINE 100
 
@@ -233,21 +233,22 @@ char *argv[];
 	/*========================================================================*/
 	
 	// début chrono
-	beginClock;
+	startTimer;
 
     omp_set_num_threads(nthreads);
-	#pragma omp parallel for
+	#pragma omp parallel for shared(image, resultat, LE_MIN, ETALEMENT, Y, X)
 	for (i = 0 ; i < Y ; i++) {
+		//#pragma omp parallel for shared(image, resultat, LE_MIN, ETALEMENT, X)
 		for (j = 0 ; j < X ; j++) {
 			resultat[i][j] = ((image[i][j] - LE_MIN) * ETALEMENT);
 		}
 	}
 
 	// Fin chrono
-	endClock;
+	stopTimer;
 
 	// affichage du chrono
-	printf("chrono %f ", tpsClock);
+	printf("chrono %ld ", tpsCalcul);
 
 	/*========================================================================*/
 	/* Sauvegarde de l'image dans le fichier resultat			*/
