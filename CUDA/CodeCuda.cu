@@ -46,6 +46,14 @@ __global__ void rehaussement_contraste_gpu(int *vec, int *res, int min, float co
 	res[i] = (vec[i] - min) * coef;
 }
 
+void rehaussement_contraste_cpu(int *vec, int *res, int min, float coef ,long N) 
+{
+	long i ;
+	for (i=0 ; i < N ; i ++) {
+		res[i] = (vec[i] - min) * coef;
+	}
+}
+
 int main(int argc, char *argv[]) {
 	if (argc < 2) {
 		printf("Erreur, manque un argument\n");
@@ -186,8 +194,11 @@ int main(int argc, char *argv[]) {
 	/*========================================================================*/
 	long blocksize = 1;	
 
+	// GPUmode, if 1 -> use cuda & gpu else use cpu
+	int gpumode = 1;
+
 	int *vecteur;
-	int *resultatCudda;
+	int *resultatContraste;
 	int *cudaVec;
 	int *cudaRes;
 
@@ -196,13 +207,13 @@ int main(int argc, char *argv[]) {
 	long size = sizeof(int)*tailleVecteur;
 
 	vecteur = (int *)malloc(size);
-	resultatCudda = (int *)malloc(size);
+	resultatContraste = (int *)malloc(size);
 
 	if (vecteur == NULL) {
 		printf("Allocation memoire qui pose probleme (vecteur) \n");
 	}
-	if (resultatCudda == NULL) {
-		printf("Allocation memoire qui pose probleme (resultatCudda) \n");
+	if (resultatContraste == NULL) {
+		printf("Allocation memoire qui pose probleme (resultatContraste) \n");
 	}
 
 	// DONE: init vec and res
@@ -210,60 +221,81 @@ int main(int argc, char *argv[]) {
 	for (i = 0 ; i < Y ; i++) {
 		for (j = 0 ; j < X ; j++) {
 			vecteur[i_vec] = image[i][j];
-			resultatCudda[i_vec] = 0;
+			resultatContraste[i_vec] = 0;
 			i_vec++;
 		}
 	}
 
-	if (cudaMalloc((void **)&cudaVec, size) == cudaErrorMemoryAllocation) {
-		printf("Allocation memoire qui pose probleme (cudaVec) \n");
-	}
-	if (cudaMalloc((void **)&cudaRes, size)  == cudaErrorMemoryAllocation) {
-		printf("Allocation memoire qui pose probleme (cudaRes) \n");
-	}
+	if (gpumode==1){
+		printf("Using gpu\n");
 
-	long dimBlock = blocksize;
-	long dimGrid = tailleVecteur/blocksize;
-	if ((tailleVecteur % blocksize) != 0) {
-		dimGrid++;
-	}
+		if (cudaMalloc((void **)&cudaVec, size) == cudaErrorMemoryAllocation) {
+			printf("Allocation memoire qui pose probleme (cudaVec) \n");
+		}
+		if (cudaMalloc((void **)&cudaRes, size)  == cudaErrorMemoryAllocation) {
+			printf("Allocation memoire qui pose probleme (cudaRes) \n");
+		}
 
-
-	int res = cudaMemcpy(&cudaVec[0], &vecteur[0], size, cudaMemcpyHostToDevice);
-
-	// printf("Copy CPU -> GPU %d \n",res);
-startTimer;
-	rehaussement_contraste_gpu<<<dimGrid, dimBlock>>>(cudaVec, cudaRes, LE_MIN, ETALEMENT, tailleVecteur);
-	// DONE: Wait for GPU to finish before accessing on host
-	cudaDeviceSynchronize();
-stopTimer;
-
-	cudaMemcpy(&resultatCudda[0], &cudaRes[0], size, cudaMemcpyDeviceToHost);
+		long dimBlock = blocksize;
+		long dimGrid = tailleVecteur/blocksize;
+		if ((tailleVecteur % blocksize) != 0) {
+			dimGrid++;
+		}
 
 
-	/* Test bon fonctionnement */
+		int res = cudaMemcpy(&cudaVec[0], &vecteur[0], size, cudaMemcpyHostToDevice);
 
-	bool ok = true;
-	int indice = -1;
-	int valtest = -1;
-	for (i_vec= 0 ; i_vec < tailleVecteur ; i_vec++) {	
-		
-		valtest = (vecteur[i_vec] - LE_MIN) * ETALEMENT;
-		if (resultatCudda[i_vec] != valtest) {
-			// printf("Resultat GPU %d Resultat CPU %d \n", resultatCudda[i_vec], valtest);
-			ok = false;
-			if (indice ==-1) {
-				indice = i_vec;
+		// printf("Copy CPU -> GPU %d \n",res);
+	startTimer;
+		rehaussement_contraste_gpu<<<dimGrid, dimBlock>>>(cudaVec, cudaRes, LE_MIN, ETALEMENT, tailleVecteur);
+		// DONE: Wait for GPU to finish before accessing on host
+		cudaDeviceSynchronize();
+	stopTimer;
+
+		cudaMemcpy(&resultatContraste[0], &cudaRes[0], size, cudaMemcpyDeviceToHost);
+
+
+		/* Test bon fonctionnement */
+
+		bool ok = true;
+		int indice = -1;
+		int valtest = -1;
+		for (i_vec= 0 ; i_vec < tailleVecteur ; i_vec++) {	
+			
+			valtest = (vecteur[i_vec] - LE_MIN) * ETALEMENT;
+			if (resultatContraste[i_vec] != valtest) {
+				// printf("Resultat GPU %d Resultat CPU %d \n", resultatContraste[i_vec], valtest);
+				ok = false;
+				if (indice ==-1) {
+					indice = i_vec;
+				}
 			}
 		}
+		printf("------ ");
+		printf("dimGrid %ld dimBlock %ld ",dimGrid, dimBlock);
+		if (ok) {
+			printf("Resultat ok\n");
+		} else {
+			printf("resultatContraste NON ok (%d)\n", indice);
+		}
+		
+		
+		cudaFree(cudaVec);
+		cudaFree(cudaRes);
+		/*========================================================================*/
+		/* Fin Code CUDA */
+		/*========================================================================*/
+
 	}
-	printf("------ ");
-	printf("dimGrid %ld dimBlock %ld ",dimGrid, dimBlock);
-	if (ok) {
-		printf("Resultat ok\n");
-	} else {
-		printf("resultatCudda NON ok (%d)\n", indice);
+	else
+	{
+		printf("Using cpu\n");
+	startTimer;
+		rehaussement_contraste_cpu(vecteur, resultatContraste, LE_MIN, ETALEMENT, tailleVecteur);
+	stopTimer;
+
 	}
+
 	printf("chrono %ld \n", tpsCalcul);
 	
 	/*========================================================================*/
@@ -273,9 +305,9 @@ stopTimer;
 	n = 0;
 	long cpt;
 	for (cpt = 0 ; cpt < tailleVecteur ; cpt++) {
-		// printf("%d \n", resultatCudda[cpt]);
+		// printf("%d \n", resultatContraste[cpt]);
 		
-		fprintf(Dst,"%3d ",resultatCudda[cpt]);
+		fprintf(Dst,"%3d ",resultatContraste[cpt]);
 		n++;
 		if (n == NBPOINTSPARLIGNES) {
 			n = 0;
@@ -285,13 +317,6 @@ stopTimer;
 
 	fprintf(Dst,"\n");
 	fclose(Dst);
-	
-	
-	cudaFree(cudaVec);
-	cudaFree(cudaRes);
-	/*========================================================================*/
-	/* Fin Code CUDA */
-	/*========================================================================*/
 
 
 	/*========================================================================*/
